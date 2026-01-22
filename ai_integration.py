@@ -12,10 +12,10 @@ load_dotenv()
 PROMPTS_DIR = "prompts"
 
 class Models(Enum):
-    GEMINI_2_5_FLASH = "google_genai:gemini-2.5-flash",
+    GEMINI_2_5_FLASH = "google_genai:gemini-2.5-flash"
     GPT_4o_MINI = "gpt-4o-mini"
 
-def _get_system() -> list[str]:
+def _get_system() -> str:
     SYSTEM_FILE_NAMES = [
         "system.md",
         "system",
@@ -30,7 +30,7 @@ def _get_system() -> list[str]:
         raise FileNotFoundError("system file not found in '" + PROMPTS_DIR + "'")
     
     with open(system_file, encoding='utf-8', mode='r') as f:
-        return f.readlines()
+            return f.read()
 
 def _get_user_ai_conversation() -> list:
     FILE_NAMES = [
@@ -79,7 +79,7 @@ models[Models.GPT_4o_MINI] = init_chat_model("gpt-4o-mini")
 parser = JsonOutputParser()
 
 base_conversation = [
-    SystemMessage(_get_system()), # type: ignore
+    SystemMessage(content=_get_system()),
     *_get_user_ai_conversation(),
 ]
 
