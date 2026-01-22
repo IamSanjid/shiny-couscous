@@ -1,0 +1,25 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+bin/
+lib/
+
+# Poetry
+# Note: Do NOT ignore poetry.lock if you want reproducible builds
+.pytest_cache/
+.mypy_cache/
+
+# (Optional) Ignore the local database data if you mount it to a folder
+postgres_data/
+
+# OS files
+.DS_Store
+Thumbs.db
