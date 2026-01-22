@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 
 # Environments
+.vscode/
 .env
 .venv
 env/
