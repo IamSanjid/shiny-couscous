@@ -1,19 +1,16 @@
 import os
 import pathlib
-from enum import Enum
 import xml.etree.ElementTree as ET
-from langchain.chat_models import init_chat_model
+from enum import Enum
+from typing import Dict
+from pydantic import BaseModel, Field
+from langchain_openai import ChatOpenAI
+from langchain_google_genai import GoogleGenerativeAI
+from langchain_core.output_parsers import PydanticOutputParser
+from langchain_core.language_models.base import BaseLanguageModel
 from langchain.messages import HumanMessage, AIMessage, SystemMessage
-from langchain_core.output_parsers.json import JsonOutputParser
-from dotenv import load_dotenv
-
-load_dotenv()
 
 PROMPTS_DIR = "prompts"
-
-class Models(Enum):
-    GEMINI_2_5_FLASH = "google_genai:gemini-2.5-flash"
-    GPT_4o_MINI = "gpt-4o-mini"
 
 def _get_system() -> str:
     SYSTEM_FILE_NAMES = [
@@ -72,22 +69,43 @@ def _get_user_ai_conversation() -> list:
     
     return result
 
+class Models(Enum):
+    GEMINI_2_5_FLASH = "gemini-2.5-flash"
+    GPT_4o_MINI = "gpt-4o-mini"
 
-models = {}
-models[Models.GEMINI_2_5_FLASH] = init_chat_model("google_genai:gemini-2.5-flash")
-models[Models.GPT_4o_MINI] = init_chat_model("gpt-4o-mini")
-parser = JsonOutputParser()
+models: Dict[Models, BaseLanguageModel] = {
+    Models.GEMINI_2_5_FLASH: GoogleGenerativeAI(model=Models.GEMINI_2_5_FLASH.value),
+    Models.GPT_4o_MINI: ChatOpenAI(model=Models.GPT_4o_MINI.value)
+}
+
+class Contact(BaseModel):
+    name: str | None = Field(description="The name of the contact")
+    phone: str | None = Field(description="The phone of the contact")
+    email: str | None = Field(description="The email of the contact")
+
+parser = PydanticOutputParser(pydantic_object=Contact)
 
 base_conversation = [
     SystemMessage(content=_get_system()),
     *_get_user_ai_conversation(),
 ]
 
-def parse_contact_info(text: str, model: Models = Models.GEMINI_2_5_FLASH):
-    conversation = base_conversation.copy()
-    conversation.append(HumanMessage(text))
-    return parser.parse(models[model].invoke(conversation).content)
+def parse_contact_info(text: str, model: Models = Models.GEMINI_2_5_FLASH) -> Contact:
+    prompt = [
+        *base_conversation,
+        HumanMessage(text)
+    ]
+    chain = models[model] | parser
+    return chain.invoke(prompt)
+
+async def aparse_contact_info(text: str, model: Models = Models.GEMINI_2_5_FLASH) -> Contact:
+    prompt = [
+        *base_conversation,
+        HumanMessage(text)
+    ]
+    chain = models[model] | parser
+    return await chain.ainvoke(prompt)
 
 if __name__ == "__main__":
     text = input("Extract info: ")
-    print(parse_contact_info(text))
+    print(parse_contact_info(text, Models.GPT_4o_MINI))
