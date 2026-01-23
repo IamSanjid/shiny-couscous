@@ -10,11 +10,16 @@ router = APIRouter(prefix="/parse", tags=["parse"])
 @router.post("/", response_model=ParseResponse)
 async def find_user(req: ParseRequest, db: AsyncSession = Depends(get_db)):
     user = parse_contact_info(req.text)
-    name_val = user.get("name")
+    name_val = user.name
     name = name_val.strip() if isinstance(name_val, str) else None
-    first_name, last_name = name.strip().split(" ") if name else (None, None)
-    email = user.get("email")
-    phone = user.get("phone")
+    if name:
+        parts = name.strip().split(" ", 1)
+        first_name = parts[0]
+        last_name = parts[1] if len(parts) > 1 else None
+    else:
+        first_name, last_name = None, None
+    email = user.email
+    phone = user.phone
     found_in_database = False
 
     if not first_name and not last_name and not email and not phone:
