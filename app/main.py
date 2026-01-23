@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from .database import get_db
 from sqlalchemy import text
-from ai_integration import parse_contact_info
+from ai_integration import aparse_contact_info
 
 app = FastAPI()
 
@@ -19,12 +19,11 @@ async def health_check(db: AsyncSession = Depends(get_db)):
 
 @app.post("/parse")
 async def find_user(req: ParseRequest, db: AsyncSession = Depends(get_db)):
-    user = parse_contact_info(req.text)
-    name_val = user.get("name")
-    name = name_val.strip() if isinstance(name_val, str) else None
-    first_name, last_name = name.strip().split(" ") if name else (None, None)
-    email = user.get("email")
-    phone = user.get("phone")
+    contact = await aparse_contact_info(req.text)
+    name = contact.name.strip() if contact.name else None
+    first_name, last_name = name.split(" ") if name else (None, None)
+    email = contact.email
+    phone = contact.phone
     found_in_database = False
 
     if not first_name and not last_name and not email and not phone:
